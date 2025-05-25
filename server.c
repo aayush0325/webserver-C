@@ -1,10 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <netinet/in.h>
+#include <stdio.h> // I/O operations
+#include <stdlib.h> // standard library functions
+#include <unistd.h> // read()
+#include <sys/socket.h> // socket syscalls
+#include <string.h> // string handling
+#include <netinet/in.h> // socket structs IPv4
 
 #define PORT 3000
 
