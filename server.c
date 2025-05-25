@@ -3,58 +3,68 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <string.h>
 #include <netinet/in.h>
 
-#define PORT 8080
+#define PORT 3000
 
-int main() {
-    int server_fd, new_socket;
+int main( int argc, char* argv[] ) {
+    char buffer[ 1024 ] = { 0 };
     struct sockaddr_in address;
-    int addrlen = sizeof(address);
-    char buffer[30000] = {0};
-    char *response = "HTTP/1.1 200 OK\r\n"
-                     "Content-Type: text/plain\r\n"
-                     "Content-Length: 12\r\n\r\n"
-                     "Hello World";
+    ssize_t bytes_read;
+    int liseten_fd;
+    char *response;
+    int accept_fd;
+    int socket_fd;
+    int bind_fd;
 
-    // Create socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
+    socket_fd = socket( AF_INET, SOCK_STREAM, 0 );
+
+    if ( socket_fd == 0 ) {
+        perror( "Unable to create socket" );
+        exit( EXIT_FAILURE );
     }
 
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons( PORT );
 
-    // Bind socket to port
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+    bind_fd = bind( socket_fd, &address, sizeof( address ) );
+
+    if ( bind_fd < 0 ) {
+        perror( "Unable to bind to socket" );
+        exit( EXIT_FAILURE );
     }
 
-    // Start listening
-    if (listen(server_fd, 3) < 0) {
-        perror("listen");
-        exit(EXIT_FAILURE);
+    liseten_fd = listen( socket_fd, 3 );
+
+    if ( liseten_fd < 0 ) {
+        perror( "Unable to listen to socket" );
+        exit( EXIT_FAILURE );
     }
 
-    printf("Server running on port %d...\n", PORT);
+    printf( "Server running on port %d\n", PORT );
 
-    while(1) {
-        // Accept new connection
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("accept");
-            exit(EXIT_FAILURE);
+    while( 1 ) {
+        accept_fd = accept( socket_fd, &address, sizeof( address ) );
+
+        if ( accept_fd < 0 ) {
+            perror( "Failed to accept request" );
         }
 
-        // Read request (ignored)
-        read(new_socket, buffer, 30000);
+        bytes_read = read( accept_fd, buffer, sizeof( buffer ) );
 
-        // Send response
-        write(new_socket, response, strlen(response));
-        close(new_socket);
+        if ( bytes_read > 0 ) {
+            printf( "%s\n", buffer );
+        }
+
+        response =  "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/plain\r\n"
+                    "Content-Length: 12\r\n\r\n"
+                    "Hello World\n";
+
+        write( accept_fd, response, strlen( response ) );
+
+        close( accept_fd );
     }
-
-    return 0;
 }
